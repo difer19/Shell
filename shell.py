@@ -4,11 +4,34 @@ import threading
 import sys
 import multiprocessing
 
+man = '''COMANDOS:
+
+    cd — cambiar el directorio de trabajo  
+    cd [ directorio ]
+    Si el argumento <directorio> no aparece, devuelve el directorio actual. 
+    Si el directorio no existe el sistema lanza un mensaje de error.
+    
+    clr - borra la pantalla del terminal.
+    
+    dir <directory> – lista el contenido de <directorio>.
+    
+    environ – muestra todas las variables de entorno.
+    
+    echo <comentario> – muestra <comentario> en la pantalla seguido de una nueva línea (espacios
+    múltiples o tabuladores se reducen a un espacio sencillo).
+    
+    help – muestra el manual de usuario usando el filtro more.
+    
+    pause – detiene la ejecución del intérprete de mandatos hasta que se pulse ‘Intro’.
+    
+    quit – sale del intérprete de mandatos.'''
+
 class interprete:
     def __init__(self):
         self.status = True
         self.pwd = self.shell = Path(__file__).parent.absolute()
         self.threads = []
+      
 
     def identificar(self, input):
         input = input.split()
@@ -22,7 +45,7 @@ class interprete:
         elif input[0] == 'echo':
             self.echo(input)
         elif input[0] == 'help':
-            ## Falta help
+            self.help()
             pass
         else:
             os.system(input[0])
@@ -112,10 +135,35 @@ class interprete:
     def terminar_Threads(self):
         for thread in self.threads:
             thread.join()
-        
-if __name__ == '__main__':
-    print("-------------------------------------")
+    def help(self):
+        x = 2
+        print("\n"+man[:222])
+        tecla = input()
+        while tecla !='q':
+            if(x == 2): 
+                print(man[223:269])
+            if(x == 3): 
+                print(man[270:332])
+            if(x == 4):
+                print(man[333:391])
+            if(x == 5):
+                print(man[392:556])
+            if(x == 6):
+                print(man[557:624])
+            if(x == 7):
+                print(man[625:717])    
+            if(x == 8):
+                print(man[718:770])   
+            if(x == 9): break
+            tecla = input()
+            x += 1
+
+
+if __name__ == '__main__'   :
     os.system("cls")
+    print("****************************************************************************")
+    print("myShell..")
+    print("----------------------------------------------------------------------------")
     if len(sys.argv) > 1:
         print("Fichero de lotes") 
         archivo = open(sys.argv[1], 'r')
