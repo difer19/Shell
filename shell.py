@@ -114,6 +114,7 @@ class interprete:
             thread.join()
         
 if __name__ == '__main__':
+    print("-------------------------------------")
     os.system("cls")
     if len(sys.argv) > 1:
         print("Fichero de lotes") 
