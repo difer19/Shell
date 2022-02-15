@@ -40,13 +40,30 @@ class interprete:
         elif input[0] == 'dir':
             self.dir(input)
         elif input[0] == 'environ':
-            print("pwd : "+ str(self.pwd))
-            print("shell : "+ str(self.shell))
+            try:
+                if len(input) == 1:
+                    print("pwd : "+ str(self.pwd))
+                    print("shell : "+ str(self.shell))
+                elif input[1] == '>':
+                    self.environ_stdout(input, '>')
+                elif input[1] == '>>':
+                    self.environ_stdout(input, '>>')
+                else:
+                    print("error : comando no valido")
+            except:
+                print("error : directorio no valido")
         elif input[0] == 'echo':
-            self.echo(input)
+            try:
+                self.echo(input)
+            except:
+                print('error : directorio no valido')
         elif input[0] == 'help':
-            self.help()
-            pass
+            if len(input) == 1:
+                self.help()
+            elif len(input) == 3:
+                self.help_stdout(input)
+            else:
+                print("error : comando no valido")
         else:
             os.system(input[0])
             # thread_ejecucion = threading.Thread(target = lambda: os.system(input[0]))
@@ -124,17 +141,65 @@ class interprete:
         for directorio in lista_directorios:
             file.write(directorio + '\n')
         file.close()
+    
+    def environ_stdout(self, source, sep):
+        source_f = ''
+        cont = 0
+        for word in source:
+            if cont > 0 and word != '>' and word != '>>':
+                source_f += " " + word
+            cont += 1
+        source_f = source_f.strip()
+        if source_f == '':
+            print("error : falta directorio")
+            return
+        if sep == '>':
+            file = open(source_f, "w+")
+            file.write("pwd : "+ str(self.pwd) + '\n')
+            file.write("shell : "+ str(self.shell) + '\n')
+        elif sep == '>>':
+            file = open(source_f, "a+")
+            file.write("pwd : "+ str(self.pwd) + '\n')
+            file.write("shell : "+ str(self.shell) + '\n')
+        file.close()
           
     def echo(self, input):
-        cont = 0
-        for word in input:
-            if cont > 0:
-                print(word)
-            cont += 1
+        if '>' not in input and '>>' not in input:
+            cont = 0
+            for word in input:
+                if cont > 0:
+                    print(word)
+                cont += 1
+        else:
+            out = []
+            sep = ''
+            source = ''
+            flag = 0
+            cont = 0
+            for word in input:
+                if cont > 0 and word != '>' and word != '>>' and flag == 0:
+                    out.append(word)
+                elif word == '>' or word == '>>' and flag == 0:
+                    flag = 1
+                    sep = word
+                elif flag == 1:
+                    source += " " + word
+                cont += 1
 
+            if sep == '>':
+                file = open(source.strip(), "w+")
+                for word in out:
+                    file.write(word + '\n')
+            elif sep == '>>':
+                file = open(source.strip(), "a+")
+                for word in out:
+                    file.write(word + '\n')
+            file.close( )
+                
     def terminar_Threads(self):
         for thread in self.threads:
             thread.join()
+
     def help(self):
         x = 2
         print("\n"+man[:222])
