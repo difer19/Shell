@@ -4,13 +4,13 @@ import threading
 import sys
 import multiprocessing
 
-man = '''COMANDOS:
+man = """COMANDOS:
 
     cd — cambiar el directorio de trabajo  
     cd [ directorio ]
     Si el argumento <directorio> no aparece, devuelve el directorio actual. 
     Si el directorio no existe el sistema lanza un mensaje de error.
-    
+ 
     clr - borra la pantalla del terminal.
     
     dir <directory> – lista el contenido de <directorio>.
@@ -24,14 +24,14 @@ man = '''COMANDOS:
     
     pause – detiene la ejecución del intérprete de mandatos hasta que se pulse ‘Intro’.
     
-    quit – sale del intérprete de mandatos.'''
+    quit – sale del intérprete de mandatos."""
 
 class interprete:
     def __init__(self):
         self.status = True
         self.pwd = self.shell = Path(__file__).parent.absolute()
         self.threads = []
-      
+
 
     def identificar(self, input):
         input = input.split()
@@ -60,8 +60,11 @@ class interprete:
         elif input[0] == 'help':
             if len(input) == 1:
                 self.help()
-            elif len(input) == 3:
-                self.help_stdout(input)
+            elif len(input) >= 3:
+                try:
+                    self.help_stdout(input)
+                except:
+                    print("error : directorio no valido" )
             else:
                 print("error : comando no valido")
         else:
@@ -222,6 +225,22 @@ class interprete:
             if(x == 9): break
             tecla = input()
             x += 1
+        
+    def help_stdout(self, input):
+        source = ''
+        cont = 0
+        for word in input:
+            if cont > 0 and word != '>' and word != '>>':
+                source += ' ' + word
+            cont += 1
+        source = source.strip()
+        if input[1] == '>':
+            file = open(source, "w+", encoding="utf-8")
+            file.writelines(str(man))
+        elif input[1] == '>>':
+            file = open(source, "a+", encoding="utf-8")
+            file.writelines(str(man))
+        file.close()
 
 
 if __name__ == '__main__'   :
