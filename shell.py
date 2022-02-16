@@ -1,8 +1,7 @@
 import os
 from pathlib import Path
-import threading
 import sys
-import multiprocessing
+
 
 man = """COMANDOS:
 
@@ -32,13 +31,22 @@ class interprete:
         self.pwd = self.shell = Path(__file__).parent.absolute()
         self.threads = []
 
-
     def identificar(self, input):
         input = input.split()
         if input[0] == 'cd':
-            self.cd(input)
+            if '<' not in input:
+                self.cd(input)
+            else:
+                self.stdin_cd(input)
         elif input[0] == 'dir':
-            self.dir(input)
+            if '<' in input and ('>' not in input and '>>' not in input):
+                self.dir_stdin(input)
+            elif '<' not in input and ('>' in input or '>>' in input):
+                self.dir_stdout(input)
+            elif '<' in input and ('>' in input or '>>' in input):
+                self.dir_stdio(input)
+            else:
+                self.dir(input)
         elif input[0] == 'environ':
             try:
                 if len(input) == 1:
@@ -53,10 +61,14 @@ class interprete:
             except:
                 print("error : directorio no valido")
         elif input[0] == 'echo':
-            try:
+            if '<' in input and ('>' not in input and '>>' not in input):
+                self.echo_stdin(input)
+            elif '<' not in input and ('>' in input or '>>' in input):
+                self.echo_stdout(input)
+            elif '<' in input and ('>' in input or '>>' in input):
+                self.echo_stdio(input)
+            else:
                 self.echo(input)
-            except:
-                print('error : directorio no valido')
         elif input[0] == 'help':
             if len(input) == 1:
                 self.help()
@@ -89,6 +101,21 @@ class interprete:
             self.pwd = Path(source.strip()).parent.absolute()
         except:
             print('error: directorio no valido ')
+    
+    def stdin_cd(self, input):
+        source = ''
+        cont = 0
+        flag = 0
+        for word in input:
+            if cont > 0 and flag == 1:
+                source += " " + word
+            elif flag == 0 and word == '<': 
+                flag = 1
+            cont += 1
+        source = source.strip()
+        path_destino = self.input_stream(source)
+        os.chdir(Path(path_destino.strip()))
+        self.pwd = Path(path_destino.strip()).parent.absolute()
 
     def dir(self, input):
         if len(input) < 2:
@@ -103,47 +130,100 @@ class interprete:
                 if cont > 0:
                     source += " " + word
                 cont += 1
-            print(source)
-            if source.find(">") == -1 and source.find(">>") == -1:
-                print("sadasd")
-                lista_directorios = os.listdir(Path(source.strip()))
-                for directorio in lista_directorios:
-                    print(directorio)
-                return
+            lista_directorios = os.listdir(Path(source.strip()))
+            for directorio in lista_directorios:
+                print(directorio)
+            return
         except:
             print('error: directorio no valido ')
-
-        if source.find(">>") != -1:
-            source = source.split('>>')
-            self.dir_file2(source, '>>')
-            return
-        elif source.find(">") != -1:
-            source = source.split(">")
-            self.dir_file1(source, ">")
-            return
-        else:
-            print('error : la sitaxis del comando es incorrecta')
-
-    def dir_file1(self, source):
-        if source[0] == '':
-            lista_directorios = os.listdir(self.pwd)
-        else:
-            lista_directorios = os.listdir(Path(source[0].strip()))
-        file = open(source[1].strip(), "w+")       
-        for directorio in lista_directorios:
-            file.write(directorio + '\n')
-        file.close()
     
-    def dir_file2(self, source):
-        if source[0] == '':
-            lista_directorios = os.listdir(self.pwd)
-            print(lista_directorios)
+    def dir_stdin(self, input):
+        if len(input) < 3:
+            print("error : sintaxis incorrecta")
+            return
+        cont = 0
+        source = ''
+        for word in input:
+            if cont > 0 and word != '<':
+                source += " " + word
+            cont += 1 
+        source = source.strip()
+        if self.input_stream(source) != 'error':
+            lista_directorios = os.listdir(Path(self.input_stream(source)))
+            for directorio in lista_directorios:
+                print(directorio)
         else:
-            lista_directorios = os.listdir(Path(source[0].strip()))   
-        file = open(source[1].strip(), "a+")
-        for directorio in lista_directorios:
-            file.write(directorio + '\n')
-        file.close()
+            print("error : directorio no valido")
+    
+    def dir_stdout(self, input):
+        input_sep = "".join(input)
+        if '>' in input:
+            input_sep = input_sep.split('>')
+        elif '>>' in input:
+            input_sep = input_sep.split('>>')
+        source = input_sep[0][3:].strip()
+        try:
+            if source == '':
+                lista_directorios = os.listdir(self.pwd)
+            else:
+                lista_directorios = os.listdir(Path(source))
+            if '>' in input:
+                file = open(input_sep[1].strip(), "w+")       
+                for directorio in lista_directorios:
+                    file.write(directorio + '\n')
+            elif '>>' in input:
+                file = open(input_sep[1].strip(), "a+")
+                for directorio in lista_directorios:
+                    file.write(directorio + '\n')
+            file.close()
+        except:
+            print("error : directorio no valido")
+    
+    def dir_stdio(self, input):
+        if '>' in input:
+            source_input = "".join(input).split('>')[0][4:].strip()
+            source_output = "".join(input).split('>')[1].strip()
+        elif '>>' in input:
+            source_input = "".join(input).split('>>')[0][4:].strip()
+            source_output = "".join(input).split('>>')[1].strip()
+        
+        try:
+            lista_directorios = os.listdir(Path(self.input_stream(source_input)))
+        except:
+            print("error : el archivo de entrada no tiene una directorio valido o no existe")
+            return     
+        try:
+            if '>' in input:
+                file = open(source_output, "w+")       
+                for directorio in lista_directorios:
+                    file.write(directorio + '\n')
+            elif '>>' in input:
+                file = open(source_output, "a+")
+                for directorio in lista_directorios:
+                    file.write(directorio + '\n')
+        except:
+            print("error : directorio no valido")
+            return
+        
+    def input_stream(self, source, command = True):
+        if command:
+            try:
+                file = open(source, 'r', encoding="utf-8")
+                lines = file.readlines() 
+                if len(lines) == 1:
+                    return lines[0]
+                else:
+                    print("error : el archivo tiene mas de una linea")
+            except:
+                return 'error'
+                print('error : directorio no valido')
+        else:
+            try:
+                file = open(source, 'r', encoding="utf-8")
+                lines = file.readlines() 
+                return lines
+            except:
+                return 'error'
     
     def environ_stdout(self, source, sep):
         source_f = ''
@@ -167,42 +247,84 @@ class interprete:
         file.close()
           
     def echo(self, input):
-        if '>' not in input and '>>' not in input:
-            cont = 0
-            for word in input:
-                if cont > 0:
+        cont = 0
+        for word in input:
+            if cont > 0:
+                print(word)
+            cont += 1
+
+    def echo_stdin(self, input):
+        source_input = "".join(input).split('<')[1].strip()
+        lines = self.input_stream(source_input, False)
+        if lines == 'error':
+            print("error : el fichero de entrada no existe")
+            return
+        elif len(lines) > 0:
+            for line in lines:
+                words = line.split()
+                for word in words:
                     print(word)
-                cont += 1
-        else:
-            out = []
-            sep = ''
-            source = ''
-            flag = 0
-            cont = 0
-            for word in input:
-                if cont > 0 and word != '>' and word != '>>' and flag == 0:
-                    out.append(word)
-                elif word == '>' or word == '>>' and flag == 0:
-                    flag = 1
-                    sep = word
-                elif flag == 1:
-                    source += " " + word
-                cont += 1
+          
+    def echo_stdout(self, input):
+        if '>' in input:
+            source_output = "".join(input).split('>')[1].strip()
+        elif '>>' in input:
+             source_output = "".join(input).split('>>')[1].strip()
+        
+        words = []
+        cont = 0
+        flag = 0
+        for word in input:
+            if word == '>' or word == '>>':
+                flag = 1
+            if cont > 0 and flag == 0:
+                words.append(word)
+            cont += 1
 
-            if sep == '>':
-                file = open(source.strip(), "w+")
-                for word in out:
+        try:
+            if '>' in input:
+                file = open(source_output, "w+")
+                for word in words:
                     file.write(word + '\n')
-            elif sep == '>>':
-                file = open(source.strip(), "a+")
-                for word in out:
+            elif '>>' in input:
+                file = open(source_output, "a+")
+                for word in words:
+                    file.write(word + '\n') 
+            file.close()
+        except:
+            print("error : directorio no valido")
+    
+    def echo_stdio(self, input):
+        if '>' in input:
+            source_output = "".join(input).split('>')[1].strip()
+            source_input = "".join(input).split('>')[0][5:].strip()
+        elif '>>' in input:
+            source_output = "".join(input).split('>>')[1].strip()
+            source_input = "".join(input).split('>>')[0][5:].strip()
+        print(source_output)
+        print(source_input)
+        lines = self.input_stream(source_input, False)
+        if lines == 'error':
+            print("error : el fichero de entrada no existe")
+            return
+        lista_words = []
+        for line in lines:
+            words = line.split()
+            for word in words:
+                lista_words.append(word)     
+        try:
+            if '>' in input:
+                file = open(source_output, "w+")
+                for word in lista_words:
                     file.write(word + '\n')
-            file.close( )
-                
-    def terminar_Threads(self):
-        for thread in self.threads:
-            thread.join()
-
+            elif '>>' in input:
+                file = open(source_output, "a+")
+                for word in lista_words:
+                    file.write(word + '\n') 
+            file.close()
+        except:
+            print("error : directorio no valido")
+        
     def help(self):
         x = 2
         print("\n"+man[:222])
@@ -263,7 +385,6 @@ if __name__ == '__main__'   :
             if a == "pause": parser.status = False
             if parser.status == True and a != '':
                 if a == "quit":
-                    # parser.terminar_Threads()
                     sys.exit()
                 elif a == "cls":
                     if os.name == "nt":
