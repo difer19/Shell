@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import sys
+import threading
 
 
 man = """COMANDOS:
@@ -80,11 +81,16 @@ class interprete:
             else:
                 print("error : comando no valido")
         else:
-            os.system(input[0])
-            # thread_ejecucion = threading.Thread(target = lambda: os.system(input[0]))
-            # thread_ejecucion.daemon = True
-            # self.threads.append(thread_ejecucion)
-            # self.threads[len(self.threads) - 1].start()
+            if len(input) == 1:
+                os.system(input[0])
+            elif len(input) == 2 and input[1] == '&':
+                thread_ejecucion = threading.Thread(target = lambda: os.system(input[0]))
+                thread_ejecucion.daemon = True
+                self.threads.append(thread_ejecucion)
+                self.threads[len(self.threads) - 1].start()
+            else:
+                print("error : sintaxis incorrecta")
+
        
     def cd(self, input):
         if len(input) < 2:
