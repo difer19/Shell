@@ -392,8 +392,8 @@ if __name__ == '__main__'   :
             if parser.status == True and a != '':
                 if a == "quit":
                     sys.exit()
-                elif a == "clr":
-                    if os.name == "nt":
+                elif a == "cls":
+                    if os.name() == "nt":
                         os.system("cls")
                     else:
                         os.system("clear")
