@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import sys
 import threading
+import platform
 
 
 man = """COMANDOS:
@@ -371,8 +372,9 @@ class interprete:
         file.close()
 
 
-if __name__ == '__main__'   :
+if __name__ == '__main__':
     os.system("cls")
+    print(platform.system())
     print("****************************************************************************")
     print("myShell..")
     print("----------------------------------------------------------------------------")
@@ -393,7 +395,7 @@ if __name__ == '__main__'   :
                 if a == "quit":
                     sys.exit()
                 elif a == "cls":
-                    if os.name() == "nt":
+                    if platform.system() == "Windows":
                         os.system("cls")
                     else:
                         os.system("clear")
