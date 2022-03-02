@@ -379,13 +379,23 @@ if __name__ == '__main__':
     print("myShell..")
     print("----------------------------------------------------------------------------")
     if len(sys.argv) > 1:
+        source = ''
+        cont = 0
+        for word in sys.argv:
+            if cont > 0:
+                source += " " + word
+            cont += 1
         print("Fichero de lotes") 
-        archivo = open(sys.argv[1], 'r')
-        lineas = archivo.readlines()
-        parser_lotes = interprete()
-        for linea in lineas:
-            parser_lotes.identificar(linea.replace('\n', ''))
-        archivo.close()
+        try:
+            archivo = open(source.strip(), 'r')
+            lineas = archivo.readlines()
+            parser_lotes = interprete()
+            for linea in lineas:
+                if linea != '':
+                    parser_lotes.identificar(linea.replace('\n', ''))
+            archivo.close()
+        except:
+            print("error: directorio no valido")
     else:
         parser = interprete()
         while True:
@@ -394,7 +404,7 @@ if __name__ == '__main__':
             if parser.status == True and a != '':
                 if a == "quit":
                     sys.exit()
-                elif a == "cls":
+                elif a == "clr":
                     if platform.system() == "Windows":
                         os.system("cls")
                     else:
